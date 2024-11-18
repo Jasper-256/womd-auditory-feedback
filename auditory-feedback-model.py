@@ -1,10 +1,13 @@
 from openai import OpenAI
 import ollama
-from gtts import gTTS
+import pyttsx3
 from pathlib import Path
 import time
 import os
 import random
+
+# source venv/bin/activate
+# pip install -r requirements.txt
 
 def load_api_key():
     with open('openai_api_key.txt', 'r') as file:
@@ -55,9 +58,10 @@ def speak_text_whisper(text):
         file.write(response.content)
 
 def speak_text_local(text):
-    language = 'en'
-    tts = gTTS(text=text, lang=language, slow=False)
-    tts.save("output/speech-local.mp3")
+    engine = pyttsx3.init()
+    engine.setProperty('rate', 190)
+    engine.save_to_file(text, "output/speech-local.aiff")
+    engine.runAndWait()
 
 def load_reasoning_file(filename):
     with open(f'WOMD-Reasoning/training/{filename}', 'r') as file:
@@ -77,7 +81,7 @@ def run_model(reasoning_filename, local):
 
     data = load_reasoning_file("scid_1ae21c08cfa0969b__aid_465__atype_1.json")
 
-    prompt = data + """\n\nThis is a scenario of a self driving car. You are the car. Your job is to describe what is happening to the user inside the car who is not driving. Your output will be spoken aloud to the user. Do not use any technical terms like "ego agent" just call the other agents cars. Do not mention any specific numbers, just say if a car is going fast or slow relative to yourself if it is important. Only mention important information and keep it mainly about yourself. Write ONLY a single sentence describing what you are doing right now."""
+    prompt = data + """\n\nThis is a scenario of a self-driving car. You are the car. Your job is to describe why the car is doing what it is doing to the user inside the car who is not driving. Your output will be spoken aloud to the user so keep it brief. Do not use any technical terms like "ego agent" just call the other agents cars. Do not mention any specific numbers, just mention if a car is going fast or slow relative to yourself if it is important. Only mention important information and keep it mainly about yourself. Write ONE BRIEF sentence describing why you are doing what you are doing right now."""
 
     start_inference = time.time()
     if local:
@@ -98,11 +102,32 @@ def run_model(reasoning_filename, local):
     end_tts = time.time()
     print(f"tts\t\t{end_tts - start_tts:.3f}s")
     print(f"total\t\t{end_tts - start:.3f}s")
+    return (end_inference - start_inference, end_tts - start_tts, end_tts - start)
 
 if __name__ == "__main__":
     filename = get_random_file()
-    print(filename)
-    print("==== local ====")
+    # print(filename)
+    # print("==== local ====")
     run_model(filename, True)
-    print("\n==== online ====")
-    run_model(filename, False)
+    # print("\n==== online ====")
+    # run_model(filename, False)
+
+    inf_times = []
+    tts_times = []
+    total_times = []
+    for _ in range(20):
+        filename = get_random_file()
+        print(filename)
+        output = run_model(filename, True)
+        inf_times.append(output[0])
+        tts_times.append(output[1])
+        total_times.append(output[2])
+    print(inf_times)
+    print(tts_times)
+    print(total_times)
+    inf_avg = sum(inf_times) / len(inf_times)
+    tts_avg = sum(tts_times) / len(tts_times)
+    total_avg = sum(total_times) / len(total_times)
+    print(f"inference avg\t{inf_avg:.3f}s")
+    print(f"tts avg\t\t{tts_avg:.3f}s")
+    print(f"total avg\t{total_avg:.3f}s")
