@@ -6,6 +6,7 @@ import time
 import os
 import random
 
+# python3 -m venv venv
 # source venv/bin/activate
 # pip install -r requirements.txt
 
@@ -79,9 +80,11 @@ def get_random_file():
 def run_model(reasoning_filename, local):
     start = time.time()
 
-    data = load_reasoning_file("scid_1ae21c08cfa0969b__aid_465__atype_1.json")
+    data = load_reasoning_file(reasoning_filename)
 
-    prompt = data + """\n\nThis is a scenario of a self-driving car. You are the car. Your job is to describe why the car is doing what it is doing to the user inside the car who is not driving. Your output will be spoken aloud to the user so keep it brief. Do not use any technical terms like "ego agent" just call the other agents cars. Do not mention any specific numbers, just mention if a car is going fast or slow relative to yourself if it is important. Only mention important information and keep it mainly about yourself. Write ONE BRIEF sentence describing why you are doing what you are doing right now."""
+    system_prompt = 'This is a scenario of a self-driving car. Your job is to describe what is happening to the user inside the car who is not driving. Your output will be spoken aloud to the user. Do not use any technical terms like "ego agent" just call the other agents cars. Do not mention any specific numbers, just say if a car is going fast or slow relative to yourself if it is important. Only mention important information and keep it mainly about yourself. Write 1 to 5 words describing what you are doing right now. ONLY WRITE 1 TO 5 WORDS.'
+
+    prompt = data + "\n\n" + system_prompt
 
     start_inference = time.time()
     if local:
@@ -104,7 +107,7 @@ def run_model(reasoning_filename, local):
     print(f"total\t\t{end_tts - start:.3f}s")
     return (end_inference - start_inference, end_tts - start_tts, end_tts - start)
 
-if __name__ == "__main__":
+def main():
     filename = get_random_file()
     # print(filename)
     # print("==== local ====")
@@ -131,3 +134,8 @@ if __name__ == "__main__":
     print(f"inference avg\t{inf_avg:.3f}s")
     print(f"tts avg\t\t{tts_avg:.3f}s")
     print(f"total avg\t{total_avg:.3f}s")
+
+if __name__ == "__main__":
+    main()
+    # filename = get_random_file()
+    # print(load_reasoning_file(filename))
